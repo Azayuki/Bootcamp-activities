@@ -7,11 +7,55 @@ function SanitizeInput(input) {
 function CreatePokemonCard(pokemon) {
   const pokemonCard = document.createElement("div");
   pokemonCard.classList.add("rounded-lg", "shadow-md", "p-4", "w-screen", 'flex', 'justify-between', `${GetPokemonCardColor(pokemon.type)}`);
-  pokemonCard.innerHTML = `
-  <h2 class="flex flex-1 text-xl font-bold mb-2">No${pokemon.pokedexNumber} <img src="./pokeball.png" alt="${pokemon.name}" class="w-8 h-8"> ${pokemon.name}</h2>
-  <h2 class="flex flex-1 text-lg font-semibold">${pokemon.type}</h2>
+  pokemonCard.innerHTML = `<div class="flex flex-1 justify-evenly p-2">
+  <p class="flex text-xl font-bold mb-2">No${pokemon.pokedexNumber} <img src="./pokeball.png" alt="${pokemon.name}" class="w-8 h-8"> ${pokemon.name}</p>
+  <p class="text-lg font-semibold">${pokemon.type}</p>
+  </div>
+  <div class="flex flex-1 justify-end items-center gap-2">
+  <button class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded" onclick="ToggleEditPokemon(${pokemon.pokedexNumber})">Edit</button>
+  <form id="editForm-${pokemon.pokedexNumber}" class="hidden mt-2">
+    <input type="text" id="newName-${pokemon.pokedexNumber}" placeholder="New Name" class="border rounded py-1 px-2 mb-2 w-full">
+    <input type="text" id="newType-${pokemon.pokedexNumber}" placeholder="New Type" class="border rounded py-1 px-2 mb-2 w-full">
+    <button type="button" class="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded" onclick="EditPokemon(${pokemon.pokedexNumber})">Save</button>
+  </form>
+  <button class="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded" onclick="DeletePokemon(${pokemon.pokedexNumber})">Delete</button>
+  </div>
   `;
   return pokemonCard;
+}
+
+function ToggleEditPokemon(pokedexNumber) {
+  const pokemon = loadedPokemons.find(p => +p.pokedexNumber === +pokedexNumber);
+  if (!pokemon) {
+    alert("Pokemon not found!");
+    return;
+  }
+  const editForm = document.getElementById(`editForm-${pokedexNumber}`);
+  editForm.classList.toggle("hidden");
+  const newNameInput = document.getElementById(`newName-${pokedexNumber}`);
+  const newTypeInput = document.getElementById(`newType-${pokedexNumber}`);
+}
+
+function EditPokemon(pokedexNumber) {
+  const pokemon = loadedPokemons.find(p => +p.pokedexNumber === +pokedexNumber);
+  if (!pokemon) {
+    alert("Pokemon not found!");
+    return;
+  }
+  const newName = document.getElementById(`newName-${pokedexNumber}`).value;
+  const newType = document.getElementById(`newType-${pokedexNumber}`).value;
+  if (newName) pokemon.name = SanitizeInput(newName);
+  if (newType) pokemon.type = SanitizeInput(newType);
+  localStorage.setItem(`pokemon-${pokedexNumber}`, JSON.stringify(pokemon));
+  document.getElementById("pokemonContainer").replaceChildren(...loadedPokemons.map(p => CreatePokemonCard(p)));
+}
+
+function DeletePokemon(pokedexNumber) {
+  console.log(`Deleting Pokemon with Pokedex Number: ${pokedexNumber}`);
+  localStorage.removeItem(`pokemon-${pokedexNumber}`);
+  loadedPokemons = loadedPokemons.filter(p => +p.pokedexNumber !== +pokedexNumber);
+  console.log(loadedPokemons);
+  document.getElementById("pokemonContainer").replaceChildren(...loadedPokemons.map(pokemon => CreatePokemonCard(pokemon)));
 }
 
 function PokemonExists(pokedexNumber) {
@@ -59,11 +103,11 @@ const storedPokemons = localStorage.length > 0 ? Object.values(localStorage).map
 let loadedPokemons = [];
 
 showFormbtn.addEventListener("click", () => {
-  if (pokemonForm.style.display === "none") {
-    pokemonForm.classList.toggle("hidden");
+  if (pokemonForm.classList.contains("hidden")) {
+    pokemonForm.classList.remove("hidden");
     showFormbtn.textContent = "Hide Form";
   } else {
-    pokemonForm.classList.toggle("hidden");
+    pokemonForm.classList.add("hidden");
     showFormbtn.textContent = "Show Form";
   }
 });
